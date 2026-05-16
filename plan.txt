@@ -1,0 +1,42 @@
+<USER_REQUEST>
+IAM GOING TO BULD AN AI ASSITANT WHCIH IS LIKE A SECOND BRAIN FOR ME GIVEN IS A 3 DAY PLAN TO DO  JUST TO THE PLAN OF TODY DAY 1  - # 3-DAY SPRINT PLAN
+
+# Build Your AI WhatsApp Personal Assistant (FREE)
+
+In 3 days, don’t try to build a “complete AI operating system.”
+
+Instead build:
+
+# a polished MVP that LOOKS advanced.
+
+That is enough for:
+
+* portfolio,
+* LinkedIn,
+* GitHub,
+* AI Engineer interviews.
+
+---
+
+# FINAL 3-DAY MVP
+
+By Day 3 your assistant should:
+
+✅ work inside WhatsApp
+✅ remember things
+✅ save reminders
+✅ retrieve old memories
+✅ answer using memory context
+✅ analyze Excel files
+✅ have a deployed frontend
+✅ have GitHub repo + demo video
+
+That’s already VERY strong.
+
+---
+
+# TECH STACK (ALL FREE)
+
+| Component | Tool                                                                                                      |
+| --------- | --------------------------------------------------------------------------------------------------------- |
+<truncated 5915 bytes>
