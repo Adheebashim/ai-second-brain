@@ -1,42 +1,37 @@
 import os
 import asyncio
-from twilio.rest import Client
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-def send_whatsapp_message(to_number: str, body: str):
+def send_telegram_message(chat_id: str, text: str):
     """
-    Synchronous function to send a WhatsApp message using Twilio.
+    Synchronous function to send a Telegram message using the Bot API.
     """
-    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
-    auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
-    from_number = os.environ.get("TWILIO_PHONE_NUMBER")
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     
-    if not account_sid or not auth_token or not from_number:
-        print("Error: Twilio credentials not fully set in .env")
+    if not bot_token or bot_token == "your_telegram_bot_token":
+        print("Error: TELEGRAM_BOT_TOKEN not set in .env")
         return
     
-    if account_sid == "your_twilio_account_sid":
-        print("Warning: Twilio credentials are still placeholders.")
-        return
-
-    client = Client(account_sid, auth_token)
-
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": text
+    }
+    
     try:
-        message = client.messages.create(
-            from_=from_number,
-            body=body,
-            to=to_number
-        )
-        print(f"Reminder sent successfully. SID: {message.sid}")
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        print(f"Reminder sent successfully to chat {chat_id}.")
     except Exception as e:
-        print(f"Failed to send reminder via Twilio: {e}")
+        print(f"Failed to send reminder via Telegram: {e}")
 
-async def schedule_reminder(delay_seconds: int, text: str, to_number: str):
+async def schedule_reminder(delay_seconds: int, text: str, chat_id: str):
     """
-    Asynchronous task that waits for delay_seconds and then sends a WhatsApp message.
+    Asynchronous task that waits for delay_seconds and then sends a Telegram message.
     """
-    print(f"Reminder scheduled for {delay_seconds} seconds from now for {to_number}")
+    print(f"Reminder scheduled for {delay_seconds} seconds from now for chat {chat_id}")
     await asyncio.sleep(delay_seconds)
-    send_whatsapp_message(to_number, f"⏰ Reminder: {text}")
+    send_telegram_message(chat_id, f"⏰ Reminder: {text}")

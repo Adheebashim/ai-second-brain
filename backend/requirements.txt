@@ -5,7 +5,7 @@ chromadb
 sentence-transformers
 python-dotenv
 pydantic
-twilio
+requests
 python-multipart
 pandas
 openpyxl

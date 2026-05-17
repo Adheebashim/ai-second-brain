@@ -5,7 +5,7 @@ Welcome to my AI Second Brain! This is a comprehensive 3-day build of a personal
 ## Features
 
 - **🧠 Persistent Vector Memory**: Powered by ChromaDB. It remembers our conversations and past facts.
-- **📱 WhatsApp Integration**: Chat with the assistant anywhere via Twilio.
+- **📱 Telegram Bot Integration**: Chat with the assistant anywhere on Telegram for free.
 - **⏰ Smart Reminders**: Automatically extracts reminders and schedules them using background tasks.
 - **📊 Excel & CSV Analysis**: Upload your data files, and the AI will analyze and memorize the rows.
 - **⚡ Ultra-fast AI**: Powered by Groq and Llama 3.1 8B Instant.
@@ -16,7 +16,7 @@ Welcome to my AI Second Brain! This is a comprehensive 3-day build of a personal
 - **Backend**: FastAPI, Python, Pandas, BackgroundTasks
 - **AI/ML**: Groq API (Llama 3.1), ChromaDB, Sentence-Transformers
 - **Frontend**: Vanilla HTML/CSS/JS (Glassmorphism design)
-- **Integrations**: Twilio (WhatsApp webhook)
+- **Integrations**: Telegram Bot API (Webhooks)
 
 ## Getting Started
 
@@ -25,19 +25,18 @@ Welcome to my AI Second Brain! This is a comprehensive 3-day build of a personal
    ```bash
    pip install -r backend/requirements.txt
    ```
-3. Set your environment variables in `.env`:
+3. Set your environment variables in `backend/.env`:
    ```env
-   GROQ_API_KEY=your_key
-   TWILIO_ACCOUNT_SID=your_sid
-   TWILIO_AUTH_TOKEN=your_token
-   TWILIO_PHONE_NUMBER=whatsapp:+14155238886
+   GROQ_API_KEY=your_groq_key
+   TELEGRAM_BOT_TOKEN=your_telegram_bot_token
    ```
 4. Run the server:
    ```bash
    cd backend
-   uvicorn main:app --reload
+   python -m uvicorn main:app --reload
    ```
-5. Open `http://127.0.0.1:8000/ui` to access the web interface!
+5. Set up your Telegram Webhook using Ngrok.
+6. Open `http://127.0.0.1:8000/ui` to access the web interface!
 
 ## Demo Video
 

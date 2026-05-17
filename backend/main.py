@@ -1,7 +1,6 @@
-from fastapi import FastAPI, Form, BackgroundTasks, Response, UploadFile, File
+from fastapi import FastAPI, Form, BackgroundTasks, Response, UploadFile, File, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from twilio.twiml.messaging_response import MessagingResponse
 from memory import save_memory, retrieve_memories
 from ai import generate_response, extract_reminder
 from reminders import schedule_reminder
@@ -68,27 +67,30 @@ async def upload_excel(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": f"Failed to process file: {str(e)}"}
 
-@app.post("/whatsapp")
-async def whatsapp_endpoint(
-    background_tasks: BackgroundTasks,
-    Body: str = Form(...),
-    From: str = Form(...)
-):
-    user_message = Body
-    sender_number = From
-
+@app.post("/telegram")
+async def telegram_endpoint(request: Request, background_tasks: BackgroundTasks):
+    update = await request.json()
+    
+    if "message" not in update or "text" not in update["message"]:
+        return {"status": "ok"}
+        
+    user_message = update["message"]["text"]
+    chat_id = update["message"]["chat"]["id"]
+    
     # 1. Check if it's a reminder
     reminder_info = extract_reminder(user_message)
     if reminder_info:
         delay = reminder_info['delay_seconds']
         text = reminder_info['reminder_text']
         # Schedule it in the background
-        background_tasks.add_task(schedule_reminder, delay, text, sender_number)
+        background_tasks.add_task(schedule_reminder, delay, text, str(chat_id))
         
         # Respond immediately to acknowledge the reminder
-        twiml = MessagingResponse()
-        twiml.message(f"Got it! I will remind you to '{text}' in {delay} seconds.")
-        return Response(content=str(twiml), media_type="application/xml")
+        return {
+            "method": "sendMessage",
+            "chat_id": chat_id,
+            "text": f"Got it! I will remind you to '{text}' in {delay} seconds."
+        }
 
     # 2. Retrieve relevant past context from memory
     memories = retrieve_memories(user_message)
@@ -99,7 +101,9 @@ async def whatsapp_endpoint(
     # 4. Save the new user message to memory so the AI remembers it
     save_memory(user_message)
     
-    # 5. Return Twilio XML response
-    twiml = MessagingResponse()
-    twiml.message(ai_response)
-    return Response(content=str(twiml), media_type="application/xml")
+    # 5. Return Telegram JSON response
+    return {
+        "method": "sendMessage",
+        "chat_id": chat_id,
+        "text": ai_response
+    }
