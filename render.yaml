@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ai-second-brain
+    env: docker
+    plan: free
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false

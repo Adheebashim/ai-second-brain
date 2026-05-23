@@ -1,17 +1,33 @@
-import chromadb
+import os
+from pinecone import Pinecone, ServerlessSpec
 from sentence_transformers import SentenceTransformer
 import uuid
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Initialize the sentence transformer model for embeddings
-# This is a lightweight model perfect for semantic search
 model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-# Initialize local ChromaDB client
-# This will create a "chroma_db" folder in the current directory to persist data
-client = chromadb.PersistentClient(path="./chroma_db")
+# Initialize Pinecone
+pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY", ""))
 
-# Get or create a collection for our memories
-collection = client.get_or_create_collection(name="memories")
+index_name = "ai-second-brain"
+
+# Check if index exists, if not, create it
+# all-MiniLM-L6-v2 outputs 384 dimensions
+if index_name not in pc.list_indexes().names():
+    pc.create_index(
+        name=index_name,
+        dimension=384,
+        metric="cosine",
+        spec=ServerlessSpec(
+            cloud='aws', 
+            region='us-east-1' # Typical free tier region
+        )
+    )
+
+index = pc.Index(index_name)
 
 def save_memory(text: str) -> None:
     """
@@ -23,12 +39,16 @@ def save_memory(text: str) -> None:
     # Generate embedding for the text
     embedding = model.encode(text).tolist()
     
-    # Store in ChromaDB with a unique ID
+    # Store in Pinecone with a unique ID and text as metadata
     memory_id = str(uuid.uuid4())
-    collection.add(
-        embeddings=[embedding],
-        documents=[text],
-        ids=[memory_id]
+    index.upsert(
+        vectors=[
+            {
+                "id": memory_id, 
+                "values": embedding, 
+                "metadata": {"text": text}
+            }
+        ]
     )
 
 def retrieve_memories(query: str, n_results: int = 3) -> list[str]:
@@ -41,15 +61,18 @@ def retrieve_memories(query: str, n_results: int = 3) -> list[str]:
     # Generate embedding for the query
     query_embedding = model.encode(query).tolist()
     
-    # Search ChromaDB
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=n_results
+    # Search Pinecone
+    results = index.query(
+        vector=query_embedding,
+        top_k=n_results,
+        include_metadata=True
     )
     
-    # Extract documents from results
-    # results['documents'] is a list of lists: [['doc1', 'doc2']]
-    if results and results.get('documents') and len(results['documents']) > 0:
-        return results['documents'][0]
-    
-    return []
+    # Extract documents from results metadata
+    memories = []
+    if results and 'matches' in results:
+        for match in results['matches']:
+            if 'metadata' in match and 'text' in match['metadata']:
+                memories.append(match['metadata']['text'])
+                
+    return memories

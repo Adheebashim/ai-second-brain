@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 groq
-chromadb
+pinecone-client
 sentence-transformers
 python-dotenv
 pydantic
