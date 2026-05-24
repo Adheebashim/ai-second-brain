@@ -15,3 +15,8 @@ backend/chroma_db/
 
 # OS files
 .DS_Store
+
+# SQLite Database
+*.db
+*.sqlite
+*.sqlite3

@@ -2,6 +2,7 @@ import os
 import asyncio
 import requests
 from dotenv import load_dotenv
+from database import add_reminder, get_due_reminders, mark_as_sent
 
 load_dotenv()
 
@@ -28,10 +29,48 @@ def send_telegram_message(chat_id: str, text: str):
     except Exception as e:
         print(f"Failed to send reminder via Telegram: {e}")
 
-async def schedule_reminder(delay_seconds: int, text: str, chat_id: str):
+def add_reminder_to_db(chat_id: str, text: str, delay_seconds: float) -> str:
     """
-    Asynchronous task that waits for delay_seconds and then sends a Telegram message.
+    Inserts a reminder into the database with a calculated due timestamp.
     """
-    print(f"Reminder scheduled for {delay_seconds} seconds from now for chat {chat_id}")
-    await asyncio.sleep(delay_seconds)
-    send_telegram_message(chat_id, f"⏰ Reminder: {text}")
+    print(f"Persisting reminder to database: '{text}' in {delay_seconds} seconds for chat {chat_id}")
+    return add_reminder(chat_id, text, delay_seconds)
+
+async def check_due_reminders():
+    """
+    Fetches due reminders from the database, sends them, and marks them as sent.
+    """
+    due_reminders = get_due_reminders()
+    if not due_reminders:
+        return
+
+    print(f"Found {len(due_reminders)} due reminders. Processing...")
+    for reminder in due_reminders:
+        try:
+            # Send the telegram alert
+            send_telegram_message(
+                reminder["chat_id"], 
+                f"⏰ Reminder: {reminder['reminder_text']}"
+            )
+            # Mark it as sent in SQLite to avoid duplication
+            mark_as_sent(reminder["id"])
+        except Exception as e:
+            print(f"Error processing reminder {reminder['id']}: {e}")
+
+async def run_scheduler_loop():
+    """
+    Persistent active background task that polls SQLite for due reminders every 10 seconds.
+    """
+    print("Persistent background reminder loop started.")
+    while True:
+        try:
+            await check_due_reminders()
+        except Exception as e:
+            print(f"Exception inside reminder scheduler loop: {e}")
+        await asyncio.sleep(10)
+
+def start_reminder_scheduler():
+    """
+    Schedules the background polling task in the running asyncio event loop.
+    """
+    asyncio.create_task(run_scheduler_loop())

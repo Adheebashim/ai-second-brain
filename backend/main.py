@@ -2,7 +2,8 @@ from fastapi import FastAPI, BackgroundTasks, Request
 from pydantic import BaseModel
 from memory import save_memory, retrieve_memories
 from ai import generate_response, extract_reminder
-from reminders import schedule_reminder
+from database import init_db
+from reminders import add_reminder_to_db, start_reminder_scheduler
 import os
 import requests
 import io
@@ -16,6 +17,13 @@ app = FastAPI(title="AI Second Brain - Telegram Private API")
 
 ALLOWED_TELEGRAM_CHAT_ID = os.environ.get("ALLOWED_TELEGRAM_CHAT_ID", "").strip()
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+
+@app.on_event("startup")
+async def startup_event():
+    # Initialize the database table
+    init_db()
+    # Start the persistent active reminder scheduler loop
+    start_reminder_scheduler()
 
 @app.get("/")
 async def root():
@@ -145,13 +153,13 @@ async def telegram_endpoint(request: Request, background_tasks: BackgroundTasks)
         if reminder_info:
             delay = reminder_info['delay_seconds']
             text = reminder_info['reminder_text']
-            # Schedule asynchronous reminder
-            background_tasks.add_task(schedule_reminder, delay, text, str(chat_id))
+            # Save reminder persistently to the database
+            add_reminder_to_db(str(chat_id), text, delay)
             
             return {
                 "method": "sendMessage",
                 "chat_id": chat_id,
-                "text": f"⏰ Got it! I will remind you to '{text}' in {delay} seconds."
+                "text": f"⏰ Got it! I have saved your reminder to '{text}' in {delay} seconds."
             }
 
         # 3b. Regular Chat with Vector Memory Context
